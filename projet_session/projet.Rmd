@@ -1,29 +1,221 @@
----
-title: "projet_session"
-output: html_document
-date: "2025-12-05"
----
+title: "Analyse lexicale du Programme Culture et Citoyenneté Québécoise (CCQ)"
+author: "Léonie Asselin"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_depth: 3
+    theme: cerulean
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
+# PROJET DE SESSION : ANALYSE LEXICALE DU PROGRAMME CULTURE ET CITOYENNETÉ QUÉBÉCOISE (CCQ)
+# Par Léonie Asselin
 
-## R Markdown
+## 1. Question de recherche
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Le programme de CCQ fournit-il aux jeunes non politisés les ressources nécessaires pour développer une compréhension minimale de la politique et participer à la vie citoyenne ?
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## 2. Revue de littérature
 
-```{r cars}
-summary(cars)
-```
+Dans les démocraties occidentales, les jeunes sont souvent accusés d’être désengagés de la vie politique. Ces jeunes apolitisés ne constituent pas un groupe homogène, puisque les obstacles et la motivation à la participation politique varient selon les individus. Parmi ces jeunes se trouve notamment le groupe des démunis. Ceux-ci se caractérisent par leur manque de connaissances et de ressources politiques. Ainsi, la non-participation de ce groupe de jeunes s’explique par leur incompréhension des systèmes politiques québécois et canadiens (Mahéo et al., 2012).
 
-## Including Plots
+Dans plusieurs pays occidentaux, dont le Canada, les cours d’éducation à la citoyenneté contribuent à augmenter l’intérêt politique, les connaissances politiques ainsi que l’engagement civique et politique. Ces conséquences sont exacerbées lorsque les élèves sont encouragés à débattre en classe, au sein d’un climat de classe ouverte (Fortier-Chouinard, 2021). Or, les cours centrés uniquement sur des contenus formels, tels que la structure de l’État et les branches du gouvernement, n'ont qu'un très faible gain sur la participation politique. En effet, ces notions augmentent le niveau de connaissance, mais pas nécessairement l’engagement politique (Kahne et al., 2006).
 
-You can also embed plots, for example:
+Le gouvernement du Québec s’est doté d’un nouveau cours d’éducation à la citoyenneté, Culture et citoyenneté québécoise (CCQ). Ce dernier, obligatoire pour tous les élèves, est implanté dans toutes les écoles sur le territoire de la province depuis août 2023. Le programme est vaste, diversifié et touche à plusieurs notions. Plusieurs de celles-ci visent l’acquisition de connaissances sur les institutions politiques et sur la citoyenneté (Programme de formation de l’école québécoise. Enseignement secondaire, 2023; Programme de formation de l’école québécoise. Enseignement primaire, 2023).
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
+## 3. Hypothèse
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+Le cours de Culture et citoyenneté québécoise au primaire et au secondaire s’inscrit davantage dans l’enseignement de contenus formels, ce qui donnerait peu de gain sur la participation politique. Cet effet pourrait être amélioré si les élèves sont amenés à débattre en classe, mais cette pratique dépend du choix discrétionnaire de l’enseignant. Ainsi, le cours de CCQ ne permet pas nécessairement aux jeunes non-politisés d’acquérir les ressources politiques nécessaires à une compréhension minimale de la vie politique et à la participation citoyenne.
+
+## 4. Analyse et visualisation des données
+
+```{r analyse-complete, echo=TRUE, eval=TRUE}
+print(resultats_long) 
+
+# --- 1. PRÉPARATION DE L'ENVIRONNEMENT ET CHARGEMENT DES DONNÉES ---
+
+# Installation des packages 
+# install.packages("pdftools")
+# install.packages("quanteda")
+# install.packages("reshape2")
+# install.packages("ggplot2") 
+# install.packages("tibble")
+
+# Chargement des librairies
+library(pdftools) # Pour l'extraction PDF
+library(quanteda) # Pour le nettoyage et l'analyse textuelle
+library(reshape2) # Pour la transformation des données (melt)
+library(ggplot2) # Pour la visualisation graphique
+library(tibble) # Pour la gestion du data.frame (tibble)
+
+# Définition des chemins de fichiers 
+chemin_primaire <- "C:/Users/leoni/OneDrive/Bureau/Université/Maîtrise/PFEQ-culture-citoyennete-quebecoise-Primaire.pdf"
+chemin_secondaire <- "C:/Users/leoni/OneDrive/Bureau/Université/Maîtrise/PFEQ-culture-citoyennete-quebecoise-Secondaire.pdf"
+
+# Lecture des PDF 
+primaire_pdf <- pdf_text(chemin_primaire)
+secondaire_pdf <- pdf_text(chemin_secondaire)
+
+# --- 2. EXTRACTION DES 4 CORPUS ---
+
+# PRIMAIRE
+# Corpus 1: Contenus (P. 25 à 63) - Thèmes + Outils + Annexes
+pages_primaire_contenus <- c(25:63)
+primaire_contenus <- paste(primaire_pdf[pages_primaire_contenus], collapse = " ")
+
+# Corpus 2: Évaluation/Compétences (P. 16 à 24) - Cadre des compétences et attentes
+primaire_eval <- paste(primaire_pdf[16:24], collapse = " ")
+
+
+# SECONDAIRE
+# Corpus 3: Contenus (P. 27 à 82) - Thèmes + Outils + Annexes
+pages_secondaire_contenus <- c(27:82)
+secondaire_contenus <- paste(secondaire_pdf[pages_secondaire_contenus], collapse = " ")
+
+# Corpus 4: Évaluation/Compétences (P. 16 à 26) - Cadre des compétences et attentes
+secondaire_eval <- paste(secondaire_pdf[16:26], collapse = " ")
+
+
+# --- 3. NETTOYAGE LINGUISTIQUE ET CRÉATION DE LA DFM ---
+
+# Rassemblement des 4 corpus de texte brut
+data_corpus <- data.frame(
+  text = c(primaire_contenus, primaire_eval, secondaire_contenus, secondaire_eval),
+  programme = c("Primaire", "Primaire", "Secondaire", "Secondaire"),
+  type = c("Contenus", "Evaluation", "Contenus", "Evaluation"),
+  stringsAsFactors = FALSE
+)
+corpus_ccq <- corpus(data_corpus)
+
+# Définition des mots vides en français
+mots_vides_fr <- stopwords("french")
+
+# Nettoyage (Tokenization, suppression du bruit et stemming)
+tokens_ccq <- tokens(corpus_ccq, 
+                     remove_numbers = TRUE, 
+                     remove_punct = TRUE, 
+                     remove_symbols = TRUE, 
+                     remove_separators = TRUE) %>%
+  tokens_remove(pattern = "http*", valuetype = "glob") %>%
+  tokens_remove(pattern = mots_vides_fr) %>%
+  tokens_wordstem(language = "french")
+
+# Création de la Document-Feature Matrix (DFM)
+dfm_ccq <- dfm(tokens_ccq)
+
+
+# --- 4. ANALYSE PAR DICTIONNAIRE ET QUANTIFICATION ---
+
+# Dictionnaire de mots-clés (en racines - Stemming)
+dictionnaire_ccq <- dictionary(list(
+  # Noms de catégories clairs pour la discussion académique
+  Savoirs_Formels_Institutionnels = c("institu", "gouvern", "loi", "droit", "règl", "norm", "structur", "connaiss", "systèm", "concept"),
+  Pratique_Pensee_Critique = c("particip", "dialogu", "débatt", "critiqu", "réfléch", "action", "engagement", "compét", "examin", "développ")
+))
+
+# Appliquer le dictionnaire à la matrice de mots (DFM)
+dfm_analyse <- dfm_lookup(dfm_ccq, dictionnaire_ccq)
+
+# Correction du bug de version : Utilisation de convert()
+resultats_frequence <- convert(dfm_analyse, to = "data.frame")
+
+# Ajout des colonnes d'identification
+resultats_frequence$programme <- data_corpus$programme
+resultats_frequence$type <- data_corpus$type
+
+
+# --- 5. CALCUL DES RATIOS ET VISUALISATION ---
+
+taille_des_corpus <- ntoken(dfm_ccq)
+
+# Conversion du tableau au format "long" pour ggplot2
+resultats_long <- reshape2::melt(resultats_frequence, 
+                                 id.vars = c("programme", "type"), 
+                                 variable.name = "categorie", 
+                                 value.name = "frequence_brute")
+
+# Ajout de la colonne des tailles de corpus
+resultats_long <- merge(resultats_long, data.frame(
+  programme = data_corpus$programme,
+  type = data_corpus$type,
+  taille_corpus = taille_des_corpus,
+  stringsAsFactors = FALSE
+))
+
+# CONVERSION EXPLICITE 
+resultats_long$frequence_brute <- as.double(resultats_long$frequence_brute)
+resultats_long$taille_corpus <- as.double(resultats_long$taille_corpus)
+
+# Calcul du RATIO
+resultats_long$ratio_frequence <- resultats_long$frequence_brute / resultats_long$taille_corpus
+
+# Affichage des résultats clés (Tableau de données)
+print("Tableau des Ratios de Fréquence (Résultats Clés) :")
+print(resultats_long)
+
+# Visualisation finale avec titres et légendes (Génère le graphique)
+ggplot(resultats_long, aes(x = type, y = ratio_frequence, fill = categorie)) +
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ programme) +
+  labs(
+    title = "Densité des mots-clés liés aux savoirs formels et à la pratique critique selon les types de documents du programme",
+    subtitle = "Ratio de fréquence par 1000 mots-clés du corpus",
+    x = "Types de documents du programme",
+    y = "Densité des mots-clés (par 1000 mots)",
+    fill = "Catégorie de vocabulaire"
+  ) +
+  scale_fill_manual(
+    name = "Catégorie de vocabulaire",
+    # Renommage des labels pour le graphique
+    values = c(
+      "Savoirs_Formels_Institutionnels" = "#2166AC", 
+      "Pratique_Pensee_Critique" = "#1B7837"      
+    ),
+    labels = c(
+      "Savoirs_Formels_Institutionnels" = "Savoirs formels et institutionnels",
+      "Pratique_Pensee_Critique" = "Pratique et pensée critique"
+    )
+  ) +
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01, scale = 1000)) + 
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
+    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    axis.title.x = element_text(size = 11),
+    axis.title.y = element_text(size = 11),
+    legend.position = "bottom"
+
+## 5. Discussion
+
+### 5.1 Interprétation des résultats
+
+Le graphique effectué sur RStudio lors de l’analyse confirme en partie l’hypothèse du départ. L’objectif de l’analyse était de déterminer à quel degré le programme de CCQ insistait sur l’acquisition des savoirs formels et factuels et sur le développement de la réflexion éthique et de la pensée critique (savoir-faire). Pour ce faire, une analyse textuelle des programmes de CCQ au primaire et au secondaire a été effectuée. Les programmes ont été analysés en deux temps, soit du côté des contenus obligatoires et des compétences évaluées, qui ne sont pas nécessairement liés. Il s’agit donc d’une analyse quantitative lexicale. La première étape consistait en l’utilisation du package `pdftools` afin de lire le texte brut des documents ministériels. Ensuite s’est suivie d’une création de corpus à l’aide d’une sélection manuelle des pages (sélection des pages reliées aux contenus d’apprentissage et aux compétences évaluées). Le package `quanteda` a par la suite servi dans le but d’effectuer un nettoyage linguistique des mots vides, des URL, des caractères spéciaux, etc. Ensuite, deux dictionnaires de mots clés (un pour les contenus, l’autre pour les compétences) a été créé, afin de déterminer la fréquence de ces mots clés, basés sur leur racine, au sein des corpus. Cette étape a permis d'obtenir la densité de chaque catégorie de vocabulaire. Finalement, le package `ggplot2` a permis de visualiser cette densité à l’aide d’un tableau à bandes.
+
+Au primaire, on voit que les contenus mettent l’accent sur les savoirs formels et factuels, tandis que les évaluations mettent davantage l’accent sur les savoirs-faire de la réflexion éthique et de la pensée critique. Ainsi, le programme exige clairement des enseignants qu'ils développent et évaluent la pratique du dialogue, du jugement critique et de la délibération chez les jeunes élèves.
+
+Le constat révèle une divergence plus marquée au secondaire. On voit clairement dans le graphique que l’acquisition des savoirs formels et factuels domine de manière significative dans le corpus contenus, mais que la pratique de la réflexion éthique et de la pensée critique est aussi importante dans le corpus évaluation. L’accent sur l’enseignement est donc relativement égal entre les contenus factuels et la pratique de la réflexion éthique et de la pensée critique.
+
+Ces résultats confirment donc l'hypothèse initiale. Puisque le programme fournit du matériel didactique important en concepts théoriques, mais place également l'exigence de la pratique critique dans le seul cadre de l'évaluation, cela indique que la capacité du cours à transformer les jeunes non-politisés en citoyens actifs repose fortement sur le choix discrétionnaire de l’enseignant pour mobiliser les concepts formels au service du débat et de la délibération. En d’autres mots, un enseignant pourrait décider d’enseigner les contenus formels liés à la politique et la citoyenneté, mais choisir de mobiliser d’autres thèmes lors de l’évaluation de la réflexion éthique. Par conséquent, le cours de CCQ ne garantit pas nécessairement aux jeunes non-politisés d’acquérir toutes les ressources politiques nécessaires à une compréhension minimale de la vie politique et à la participation citoyenne, puisque la transmission de ces ressources dépend de la méthode pédagogique employée en classe.
+
+### 5.2 Outils numériques mobilisés
+
+Elicit et Zotero ont été utilisés pour la section de la revue de littérature. Elicit a notamment été sélectionné pour la recherche de sources. Ce choix a été fait principalement en fonction des besoins du travail, soit de sélectionner quelques sources importantes et utiles pour effectuer une courte revue de littérature. Le choix d’Elicit a également été fait pour sa popularité dans le champ de la science politique et des sciences humaines en général, de son accessibilité et de sa compatibilité avec Zotero, qui, pour sa part, a servi à l’organisation des sources et à la rédaction de la bibliographie. Zotero a également été choisi en fonction de sa popularité en sciences sociales, de son accessibilité et de sa compatibilité avec Elicit.
+
+Les fichiers PDF des programmes pour la collecte de résultats ont, quant à eux, été trouvés à l’aide d’une recherche Google sur le site du gouvernement.
+
+RStudio a été sélectionné pour l’étape de l’analyse des résultats en fonction de sa flexibilité, de son adaptabilité, de sa communauté d’utilisateurs, de sa popularité en sciences sociales, de sa transparence, de sa réplicabilité et de sa philosophie du logiciel libre.
+
+Finalement, Gemini Pro a été utilisé pour la correction du français et pour l'aide à la création du code d’analyse effectué sur RStudio. Toutes les réponses de l’intelligence artificielle ont été vérifiées afin d’éviter les erreurs. Gemini Pro a été choisi notamment pour son accessibilité à la communauté étudiante.
+
+## 6. Bibliographie
+
+Fortier-Chouinard, A. (2021). Éducation à la citoyenneté et politisation des jeunes au Québec : Perspectives d’enseignant⋅e⋅s. Revue des sciences de l’éducation, 46(3), 95‑124. https://doi.org/10.7202/1075989a
+
+Kahne, J., Chi, B., & Middaugh, E. (2006). Building Social Capital for Civic and Political Engagement : The Potential of High-School Civics Courses. Canadian Journal of Education / Revue Canadienne de l’éducation, 29(2), 387. https://doi.org/10.2307/20054169
+
+Mahéo, V.-A., Dejaeghere, Y., & Stolle, D. (2012). La non-participation politique des jeunes : Une étude des barrières temporaires et permanentes de l’engagement. Canadian Journal of Political Science, 45(2), 405‑425. https://doi.org/10.1017/S0008423912000388
+
+Programme de formation de l’école québécoise. Enseignement primaire : Programme Culture et citoyenneté québécoise. (2023). Ministère de l’éducation.
+
+Programme de formation de l’école québécoise. Enseignement secondaire : Programme culture et citoyenneté québécoise. (2023). Ministère de l’éducation.
+
+
