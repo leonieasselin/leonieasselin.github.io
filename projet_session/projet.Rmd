@@ -1,13 +1,4 @@
-title: "Analyse lexicale du Programme Culture et Citoyenneté Québécoise (CCQ)"
-author: "Léonie Asselin"
-date: "`r format(Sys.time(), '%d %B %Y')`"
-output:
-  html_document:
-    toc: true
-    toc_depth: 3
-    theme: cerulean
-
-# PROJET DE SESSION : ANALYSE LEXICALE DU PROGRAMME CULTURE ET CITOYENNETÉ QUÉBÉCOISE (CCQ)
+# PROJET DE SESSION : ANALYSE DU PROGRAMME CULTURE ET CITOYENNETÉ QUÉBÉCOISE (CCQ)
 # Par Léonie Asselin
 
 ## 1. Question de recherche
@@ -28,50 +19,38 @@ Le cours de Culture et citoyenneté québécoise au primaire et au secondaire s�
 
 ## 4. Analyse et visualisation des données
 
-```{r analyse-complete, echo=TRUE, eval=TRUE}
-print(resultats_long) 
+Le code ci-dessous présente la méthodologie complète de l'analyse lexicale, de la collecte des données à la visualisation des résultats (Tableau 1 et Figure 1).
 
+```{r analyse-complete, echo=TRUE, eval=TRUE}
 # --- 1. PRÉPARATION DE L'ENVIRONNEMENT ET CHARGEMENT DES DONNÉES ---
 
-# Installation des packages 
-# install.packages("pdftools")
-# install.packages("quanteda")
-# install.packages("reshape2")
-# install.packages("ggplot2") 
-# install.packages("tibble")
-
-# Chargement des librairies
+# Chargement des librairies (Installation des packages laissée commentée)
 library(pdftools) # Pour l'extraction PDF
 library(quanteda) # Pour le nettoyage et l'analyse textuelle
 library(reshape2) # Pour la transformation des données (melt)
 library(ggplot2) # Pour la visualisation graphique
 library(tibble) # Pour la gestion du data.frame (tibble)
 
-# Définition des chemins de fichiers 
-chemin_primaire <- "C:/Users/leoni/OneDrive/Bureau/Université/Maîtrise/PFEQ-culture-citoyennete-quebecoise-Primaire.pdf"
+# Définition des chemins de fichiers (DOIVENT ÊTRE DANS LE MÊME DOSSIER QUE .RMD)
+# Si les PDF sont dans le même dossier, utilisez les chemins courts ci-dessous:
+chemin_primaire <- "C:/Users/leoni/OneDrive/Bureau/Université/Maîtrise/PFEQ-culture-citoyennete-quebecoise-Primaire.pdf" 
 chemin_secondaire <- "C:/Users/leoni/OneDrive/Bureau/Université/Maîtrise/PFEQ-culture-citoyennete-quebecoise-Secondaire.pdf"
 
-# Lecture des PDF 
+# Lecture des PDF 
+# (Si vous utilisez les chemins longs de votre ordinateur, la compilation peut échouer)
 primaire_pdf <- pdf_text(chemin_primaire)
 secondaire_pdf <- pdf_text(chemin_secondaire)
 
 # --- 2. EXTRACTION DES 4 CORPUS ---
 
 # PRIMAIRE
-# Corpus 1: Contenus (P. 25 à 63) - Thèmes + Outils + Annexes
 pages_primaire_contenus <- c(25:63)
 primaire_contenus <- paste(primaire_pdf[pages_primaire_contenus], collapse = " ")
-
-# Corpus 2: Évaluation/Compétences (P. 16 à 24) - Cadre des compétences et attentes
 primaire_eval <- paste(primaire_pdf[16:24], collapse = " ")
 
-
 # SECONDAIRE
-# Corpus 3: Contenus (P. 27 à 82) - Thèmes + Outils + Annexes
 pages_secondaire_contenus <- c(27:82)
 secondaire_contenus <- paste(secondaire_pdf[pages_secondaire_contenus], collapse = " ")
-
-# Corpus 4: Évaluation/Compétences (P. 16 à 26) - Cadre des compétences et attentes
 secondaire_eval <- paste(secondaire_pdf[16:26], collapse = " ")
 
 
@@ -79,10 +58,10 @@ secondaire_eval <- paste(secondaire_pdf[16:26], collapse = " ")
 
 # Rassemblement des 4 corpus de texte brut
 data_corpus <- data.frame(
-  text = c(primaire_contenus, primaire_eval, secondaire_contenus, secondaire_eval),
-  programme = c("Primaire", "Primaire", "Secondaire", "Secondaire"),
-  type = c("Contenus", "Evaluation", "Contenus", "Evaluation"),
-  stringsAsFactors = FALSE
+  text = c(primaire_contenus, primaire_eval, secondaire_contenus, secondaire_eval),
+  programme = c("Primaire", "Primaire", "Secondaire", "Secondaire"),
+  type = c("Contenus", "Evaluation", "Contenus", "Evaluation"),
+  stringsAsFactors = FALSE
 )
 corpus_ccq <- corpus(data_corpus)
 
@@ -90,14 +69,14 @@ corpus_ccq <- corpus(data_corpus)
 mots_vides_fr <- stopwords("french")
 
 # Nettoyage (Tokenization, suppression du bruit et stemming)
-tokens_ccq <- tokens(corpus_ccq, 
-                     remove_numbers = TRUE, 
-                     remove_punct = TRUE, 
-                     remove_symbols = TRUE, 
-                     remove_separators = TRUE) %>%
-  tokens_remove(pattern = "http*", valuetype = "glob") %>%
-  tokens_remove(pattern = mots_vides_fr) %>%
-  tokens_wordstem(language = "french")
+tokens_ccq <- tokens(corpus_ccq,
+                     remove_numbers = TRUE,
+                     remove_punct = TRUE,
+                     remove_symbols = TRUE,
+                     remove_separators = TRUE) %>%
+  tokens_remove(pattern = "http*", valuetype = "glob") %>%
+  tokens_remove(pattern = mots_vides_fr) %>%
+  tokens_wordstem(language = "french")
 
 # Création de la Document-Feature Matrix (DFM)
 dfm_ccq <- dfm(tokens_ccq)
@@ -107,18 +86,13 @@ dfm_ccq <- dfm(tokens_ccq)
 
 # Dictionnaire de mots-clés (en racines - Stemming)
 dictionnaire_ccq <- dictionary(list(
-  # Noms de catégories clairs pour la discussion académique
-  Savoirs_Formels_Institutionnels = c("institu", "gouvern", "loi", "droit", "règl", "norm", "structur", "connaiss", "systèm", "concept"),
-  Pratique_Pensee_Critique = c("particip", "dialogu", "débatt", "critiqu", "réfléch", "action", "engagement", "compét", "examin", "développ")
+  Savoirs_Formels_Institutionnels = c("institu", "gouvern", "loi", "droit", "règl", "norm", "structur", "connaiss", "systèm", "concept"),
+  Pratique_Pensee_Critique = c("particip", "dialogu", "débatt", "critiqu", "réfléch", "action", "engagement", "compét", "examin", "développ")
 ))
 
 # Appliquer le dictionnaire à la matrice de mots (DFM)
 dfm_analyse <- dfm_lookup(dfm_ccq, dictionnaire_ccq)
-
-# Correction du bug de version : Utilisation de convert()
 resultats_frequence <- convert(dfm_analyse, to = "data.frame")
-
-# Ajout des colonnes d'identification
 resultats_frequence$programme <- data_corpus$programme
 resultats_frequence$type <- data_corpus$type
 
@@ -126,63 +100,63 @@ resultats_frequence$type <- data_corpus$type
 # --- 5. CALCUL DES RATIOS ET VISUALISATION ---
 
 taille_des_corpus <- ntoken(dfm_ccq)
+resultats_long <- reshape2::melt(resultats_frequence,
+                                 id.vars = c("programme", "type"),
+                                 variable.name = "categorie",
+                                 value.name = "frequence_brute")
 
-# Conversion du tableau au format "long" pour ggplot2
-resultats_long <- reshape2::melt(resultats_frequence, 
-                                 id.vars = c("programme", "type"), 
-                                 variable.name = "categorie", 
-                                 value.name = "frequence_brute")
-
-# Ajout de la colonne des tailles de corpus
 resultats_long <- merge(resultats_long, data.frame(
-  programme = data_corpus$programme,
-  type = data_corpus$type,
-  taille_corpus = taille_des_corpus,
-  stringsAsFactors = FALSE
+  programme = data_corpus$programme,
+  type = data_corpus$type,
+  taille_corpus = taille_des_corpus,
+  stringsAsFactors = FALSE
 ))
 
-# CONVERSION EXPLICITE 
+# CONVERSION EXPLICITE
 resultats_long$frequence_brute <- as.double(resultats_long$frequence_brute)
 resultats_long$taille_corpus <- as.double(resultats_long$taille_corpus)
 
 # Calcul du RATIO
 resultats_long$ratio_frequence <- resultats_long$frequence_brute / resultats_long$taille_corpus
 
-# Affichage des résultats clés (Tableau de données)
+# --- AFFICHAGE DES RÉSULTATS ---
+
+# Tableau 1: Ratios de Fréquence (Résultats Clés)
 print("Tableau des Ratios de Fréquence (Résultats Clés) :")
 print(resultats_long)
 
-# Visualisation finale avec titres et légendes (Génère le graphique)
+# Figure 1: Visualisation (Le Graphique)
 ggplot(resultats_long, aes(x = type, y = ratio_frequence, fill = categorie)) +
-  geom_bar(stat = "identity", position = "dodge") +
-  facet_wrap(~ programme) +
-  labs(
-    title = "Densité des mots-clés liés aux savoirs formels et à la pratique critique selon les types de documents du programme",
-    subtitle = "Ratio de fréquence par 1000 mots-clés du corpus",
-    x = "Types de documents du programme",
-    y = "Densité des mots-clés (par 1000 mots)",
-    fill = "Catégorie de vocabulaire"
-  ) +
-  scale_fill_manual(
-    name = "Catégorie de vocabulaire",
-    # Renommage des labels pour le graphique
-    values = c(
-      "Savoirs_Formels_Institutionnels" = "#2166AC", 
-      "Pratique_Pensee_Critique" = "#1B7837"      
-    ),
-    labels = c(
-      "Savoirs_Formels_Institutionnels" = "Savoirs formels et institutionnels",
-      "Pratique_Pensee_Critique" = "Pratique et pensée critique"
-    )
-  ) +
-  scale_y_continuous(labels = scales::number_format(accuracy = 0.01, scale = 1000)) + 
-  theme_minimal() +
-  theme(
-    plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
-    plot.subtitle = element_text(hjust = 0.5, size = 10),
-    axis.title.x = element_text(size = 11),
-    axis.title.y = element_text(size = 11),
-    legend.position = "bottom"
+  geom_bar(stat = "identity", position = "dodge") +
+  facet_wrap(~ programme) +
+  labs(
+    title = "Densité des mots-clés liés aux savoirs formels et à la pratique critique selon les types de documents du programme",
+    subtitle = "Ratio de fréquence par 1000 mots-clés du corpus",
+    x = "Types de documents du programme",
+    y = "Densité des mots-clés (par 1000 mots)",
+    fill = "Catégorie de vocabulaire"
+  ) +
+  scale_fill_manual(
+    name = "Catégorie de vocabulaire",
+    values = c(
+      "Savoirs_Formels_Institutionnels" = "#2166AC",
+      "Pratique_Pensee_Critique" = "#1B7837"
+    ),
+    labels = c(
+      "Savoirs_Formels_Institutionnels" = "Savoirs formels et institutionnels",
+      "Pratique_Pensee_Critique" = "Pratique et pensée critique"
+    )
+  ) +
+  scale_y_continuous(labels = scales::number_format(accuracy = 0.01, scale = 1000)) +
+  theme_minimal() +
+  theme(
+    plot.title = element_text(hjust = 0.5, face = "bold", size = 12),
+    plot.subtitle = element_text(hjust = 0.5, size = 10),
+    axis.title.x = element_text(size = 11),
+    axis.title.y = element_text(size = 11),
+    legend.position = "bottom"
+  )
+```
 
 ## 5. Discussion
 
@@ -217,5 +191,3 @@ Mahéo, V.-A., Dejaeghere, Y., & Stolle, D. (2012). La non-participation politiq
 Programme de formation de l’école québécoise. Enseignement primaire : Programme Culture et citoyenneté québécoise. (2023). Ministère de l’éducation.
 
 Programme de formation de l’école québécoise. Enseignement secondaire : Programme culture et citoyenneté québécoise. (2023). Ministère de l’éducation.
-
-
